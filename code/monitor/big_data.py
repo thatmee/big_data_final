@@ -72,7 +72,7 @@ name_cnt = {
 }
 
 # redis
-pool = redis.ConnectionPool(host="nyf-2019211193-0001", port=6379, decode_responses=True)
+pool = redis.ConnectionPool(host="nyf-2019211193-0001", port=6379, decode_responses=True, password='1Cuk1Be4O^4aXx3LL33=')
 
 
 # -------funtion---------

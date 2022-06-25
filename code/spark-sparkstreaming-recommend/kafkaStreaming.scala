@@ -20,10 +20,10 @@ import java.util
 import collection.JavaConverters._
 
 object kafkaStreaming {
-  def getSc() = {
+  def getSc(duration:Int) = {
     val sparkConf = new SparkConf()
     sparkConf.setMaster("local[2]").setAppName("kafkaConsumer")
-    val streamingContext = new StreamingContext(sparkConf, Durations.seconds(30))
+    val streamingContext = new StreamingContext(sparkConf, Durations.seconds(duration))
     streamingContext
   }
   def isEqual(x:(Int,Float), y:Float):List[(Int, Int)] = {
@@ -34,7 +34,7 @@ object kafkaStreaming {
   }
   def getStream(sc:StreamingContext) = {
     val kafkaParams = Map[String, Object] (
-      "bootstrap.servers" -> "cck-0003:9092",
+      "bootstrap.servers" -> "nyf-2019211193-0001:9092",
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
       "group.id" -> "kafkaStreaming",
@@ -50,7 +50,7 @@ object kafkaStreaming {
     )
     stream
   }
-  def streamingCore(sc: StreamingContext): Unit = {
+  def streamingCore(sc: StreamingContext, task: String): Unit = {
     val stream = kafkaStreaming.getStream(sc).map(x=>{
       val json: JSONObject = JSON.parseObject(x.value())
       (x.key(),json.get("userId").toString.toInt,json.get("movieId").toString.toInt,json.get("rating").toString.toFloat,json.get("timestamp").toString)
@@ -61,11 +61,12 @@ object kafkaStreaming {
       rdd.foreachPartition { part => {
         //redis connection
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        //hbase connection
-        val config = HBaseConfiguration.create
-        config.set("hbase.zookeeper.property.clientPort", "2181")
-        config.set("hbase.zookeeper.quorum", "cck-0003")
-        val connection = ConnectionFactory.createConnection(config)
+        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        // //hbase connection
+        // val config = HBaseConfiguration.create
+        // config.set("hbase.zookeeper.property.clientPort", "2181")
+        // config.set("hbase.zookeeper.quorum", "nyf-2019211193-0001")
+        // val connection = ConnectionFactory.createConnection(config)
         val table = connection.getTable(TableName.valueOf("movie_records"))
         var records: List[Put] = List()
         part.foreach { x => {
@@ -78,12 +79,12 @@ object kafkaStreaming {
           //              println(record)
           //              println(JSON.toJSONString(record.asJava,SerializerFeature.WriteMapNullValue))
           jedisIns.rpush("streaming_records", JSON.toJSONString(record.asJava, SerializerFeature.WriteMapNullValue))
-          //写入hbase
-          val put = new Put(Bytes.toBytes(x._1))
-          put.addColumn(Bytes.toBytes("details"),Bytes.toBytes("userId"),Bytes.toBytes(record("userId")))
-          put.addColumn(Bytes.toBytes("details"),Bytes.toBytes("movieId"),Bytes.toBytes(record("movieId")))
-          put.addColumn(Bytes.toBytes("details"),Bytes.toBytes("rating"),Bytes.toBytes(record("rating")))
-          put.addColumn(Bytes.toBytes("details"),Bytes.toBytes("timestamp"),Bytes.toBytes(record("timestamp")))
+          // //写入hbase
+          // val put = new Put(Bytes.toBytes(x._1))
+          // put.addColumn(Bytes.toBytes("details"),Bytes.toBytes("userId"),Bytes.toBytes(record("userId")))
+          // put.addColumn(Bytes.toBytes("details"),Bytes.toBytes("movieId"),Bytes.toBytes(record("movieId")))
+          // put.addColumn(Bytes.toBytes("details"),Bytes.toBytes("rating"),Bytes.toBytes(record("rating")))
+          // put.addColumn(Bytes.toBytes("details"),Bytes.toBytes("timestamp"),Bytes.toBytes(record("timestamp")))
           records = records :+ put
         }
         import scala.collection.JavaConverters._
@@ -101,6 +102,7 @@ object kafkaStreaming {
         line.sortBy(x => x._2, ascending = false).take(10).foreach(
           x => {
             val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
+            jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
             while (jedisIns.llen("popular_movies_all")>=30) jedisIns.lpop("popular_movies_all")
             jedisIns.rpush("popular_movies_all",x._1.toString)
             jedisIns.close()
@@ -112,6 +114,7 @@ object kafkaStreaming {
     stream.flatMap(x=> {
       var seqList: Seq[(Int, (Int, Int))] = Seq()
       val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
+      jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
       val genresList = jedisIns.lrange(s"movie2genres_movieId_${x._3}",0,-1)
       val it = genresList.iterator()
       while (it.hasNext) {
@@ -145,6 +148,7 @@ object kafkaStreaming {
         rdd => rdd.foreach{
         x => {
           val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
+          jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
           jedisIns.del(s"popular_movies_genreId_${x._1}")
           for (i <- 0 until x._2._1) {
             jedisIns.rpush(s"popular_movies_genreId_${x._1}", x._2._2(i)._1.toString)
@@ -175,6 +179,7 @@ object kafkaStreaming {
         var sum = 0
         val one_hot: Array[Int] = new Array[Int](19)
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
+        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
         for (record<-x) {
           sum=sum+1
           val genres_list = jedisIns.lrange("movie2genres_movieId_" + record.toString,0,-1)
@@ -194,47 +199,58 @@ object kafkaStreaming {
     counterUserIdPos.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.set("streaming2feature_userId_rating1_" + x._1.toString, x._2.toString)
+        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.set(task + "2feature_userId_rating1_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
     )
     counterUserIdNeg.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.set("streaming2feature_userId_rating0_" + x._1.toString, x._2.toString)
+        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.set(task + "2feature_userId_rating0_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
     )
     counterMovieIdPos.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.set("streaming2feature_movieId_rating1_" + x._1.toString, x._2.toString)
+        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.set(task + "2feature_movieId_rating1_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
     )
     counterMovieIdNeg.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.set("streaming2feature_movieId_rating0_" + x._1.toString, x._2.toString)
+        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.set(task + "2feature_movieId_rating0_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
     )
     counterUserId2MovieId.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.set(s"streaming2feature_userId_to_genresId_${x._1.toString}_${x._2._1}", x._2._2.toString)
+        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.set(task + s"2feature_userId_to_genresId_${x._1.toString}_${x._2._1}", x._2._2.toString)
         jedisIns.close()
       }}
     )
   }
-  val redis_host:String = "cck-0003"
+  val redis_host:String = "nyf-2019211193-0001"
   val redis_port:Int = 6379
   val redis_timeout:Int = 10000
+  
   def main(args:Array[String]) = {
     Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
-    val sc:StreamingContext = kafkaStreaming.getSc()
-    streamingCore(sc)
-    sc.start()
-    sc.awaitTermination()
+    val streamingSc:StreamingContext = kafkaStreaming.getSc(30)
+    val batchSc:StreamingContext = kafkaStreaming.getSc(0)
+
+    streamingCore(streamingSc, "streaming")
+    streamingCore(batchSc, "batch")
+    streamingSc.start()
+    batchSc.start()
+    streamingSc.awaitTermination()
+    batchSc.awaitTermination()
   }
 }
