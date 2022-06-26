@@ -1,30 +1,16 @@
-
-import com.alibaba.fastjson
-import com.alibaba.fastjson.JSON.parseObject
 import com.alibaba.fastjson.{JSON, JSONObject}
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.common.TopicPartition
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
 import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.linalg.{Vector, Vectors}
-import org.apache.spark.sql.{Row,DataFrame, SparkSession}
-import org.apache.spark.streaming.{Seconds, StreamingContext}
-import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
-
-import java.io.{BufferedWriter, FileWriter}
+import org.apache.spark.sql.SparkSession
+import redis.clients.jedis.Jedis
 import java.lang.Thread.sleep
 import java.text.SimpleDateFormat
-import java.time.Duration
-import java.util.{Collections, Date, Properties}
+import java.util.Date
 import scala.collection.mutable
-import scala.concurrent.duration.Duration
 
 object recommend {
   def add_record(map:mutable.Map[String,Int],jedis: Jedis,json:JSONObject) = {
-//    println(json)
     val userId = json.getOrDefault("userId",null).toString.toInt
     val movieId = json.getOrDefault("movieId",null).toString.toInt
     val rating = json.getOrDefault("rating",null).toString.toFloat.toInt
@@ -55,6 +41,7 @@ object recommend {
     }
     map
   }
+
   def delete_record(map:mutable.Map[String,Int],jedis: Jedis,json:JSONObject) = {
     val userId = json.getOrDefault("userId",null).toString.toInt
     val movieId = json.getOrDefault("movieId",null).toString.toInt
@@ -86,11 +73,7 @@ object recommend {
     }
     map
   }
-//  def getRedisList(jedis: Jedis,key:String) = {
-//    val value = jedis.lrange(key,0,-1)
-//    jedis.close()
-//    value
-//  }
+
   def collect_train_data() = {
     val jedis = new Jedis(redis_host,redis_port,redis_timeout)
     jedis.auth("1Cuk1Be4O^4aXx3LL33=")
