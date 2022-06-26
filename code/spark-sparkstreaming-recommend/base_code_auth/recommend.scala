@@ -23,7 +23,7 @@ import scala.concurrent.duration.Duration
 
 object recommend {
   def add_record(map:mutable.Map[String,Int],jedis: Jedis,json:JSONObject) = {
-//    println(json)
+    //    println(json)
     val userId = json.getOrDefault("userId",null).toString.toInt
     val movieId = json.getOrDefault("movieId",null).toString.toInt
     val rating = json.getOrDefault("rating",null).toString.toFloat.toInt
@@ -85,14 +85,14 @@ object recommend {
     }
     map
   }
-//  def getRedisList(jedis: Jedis,key:String) = {
-//    val value = jedis.lrange(key,0,-1)
-//    jedis.close()
-//    value
-//  }
+  //  def getRedisList(jedis: Jedis,key:String) = {
+  //    val value = jedis.lrange(key,0,-1)
+  //    jedis.close()
+  //    value
+  //  }
   def collect_train_data() = {
     val jedis = new Jedis(redis_host,redis_port,redis_timeout)
-    jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+    jedis.auth("1Cuk1Be4O^4aXx3LL33=")
     val records_length = jedis.llen("streaming_records")
     var map: mutable.Map[String, Int] = mutable.Map()
     for(i <- 0 to records_length.toInt/2) {
@@ -147,7 +147,7 @@ object recommend {
           val value = map.getOrElseUpdate(s"counteruserId2genre_${userId}_${i}",0).toDouble
           if (value==0)
             0.toDouble
-          else 
+          else
             value/counteruserIdsum.toDouble
         }
       }
@@ -169,16 +169,16 @@ object recommend {
 
     // Fit the model
     val lrModel = lr.fit(train_dataframe)
-//    val trainingSummary = lrModel.binarySummary
-//    val objectiveHistory = trainingSummary.objectiveHistory
-//    println("objectiveHistory:")
-//    objectiveHistory.foreach(loss => println(loss))
-//    println(s"areaUnderROC: ${trainingSummary.areaUnderROC}")
+    //    val trainingSummary = lrModel.binarySummary
+    //    val objectiveHistory = trainingSummary.objectiveHistory
+    //    println("objectiveHistory:")
+    //    objectiveHistory.foreach(loss => println(loss))
+    //    println(s"areaUnderROC: ${trainingSummary.areaUnderROC}")
 
     val params_coefficients = lrModel.coefficients.toDense.toArray
     println(params_coefficients.mkString("Array(", ", ", ")"))
     val jedis = new Jedis(redis_host,redis_port,redis_timeout)
-    jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+    jedis.auth("1Cuk1Be4O^4aXx3LL33=")
     jedis.del("params_coefficients")
     for (i<- params_coefficients.indices)
       jedis.rpush("params_coefficients",params_coefficients(i).toString)
