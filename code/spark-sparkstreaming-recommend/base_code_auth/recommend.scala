@@ -92,7 +92,7 @@ object recommend {
   //  }
   def collect_train_data() = {
     val jedis = new Jedis(redis_host,redis_port,redis_timeout)
-    jedis.auth("1Cuk1Be4O^4aXx3LL33=")
+    jedis.auth("redis_passwd")
     val records_length = jedis.llen("streaming_records")
     var map: mutable.Map[String, Int] = mutable.Map()
     for(i <- 0 to records_length.toInt/2) {
@@ -178,7 +178,7 @@ object recommend {
     val params_coefficients = lrModel.coefficients.toDense.toArray
     println(params_coefficients.mkString("Array(", ", ", ")"))
     val jedis = new Jedis(redis_host,redis_port,redis_timeout)
-    jedis.auth("1Cuk1Be4O^4aXx3LL33=")
+    jedis.auth("redis_passwd")
     jedis.del("params_coefficients")
     for (i<- params_coefficients.indices)
       jedis.rpush("params_coefficients",params_coefficients(i).toString)

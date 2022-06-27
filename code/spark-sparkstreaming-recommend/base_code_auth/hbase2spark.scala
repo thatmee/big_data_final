@@ -68,7 +68,7 @@ object hbase2spark {
         val one_hot: Array[Int] = new Array[Int](19)
 //        val jedisIns = new JedisIns("bd",6379,100000)
         val jedisIns:Jedis = new Jedis("nyf-2019211193-0001",6379,100000)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         for (record<-x) {
           sum=sum+1
           val genres_list = jedisIns.lrange("movie2genres_movieId_" + record.toString,0,-1)
@@ -88,31 +88,31 @@ object hbase2spark {
     // 依次输出统计结果
     counterUserIdPos.foreach( x=> {
       val jedisIns = new Jedis("nyf-2019211193-0001",6379,100000)
-      jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+      jedisIns.auth("redis_passwd")
       jedisIns.set("batch2feature_userId_rating1_"+x._1.toString, x._2.toString)
       jedisIns.close()
     })
     counterUserIdNeg.foreach( x=> {
       val jedisIns = new Jedis("nyf-2019211193-0001",6379,100000)
-      jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+      jedisIns.auth("redis_passwd")
       jedisIns.set("batch2feature_userId_rating0_"+x._1.toString, x._2.toString)
       jedisIns.close()
     })
     counterMovieIdPos.foreach( x=> {
       val jedisIns = new Jedis("nyf-2019211193-0001",6379,100000)
-      jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+      jedisIns.auth("redis_passwd")
       jedisIns.set("batch2feature_movieId_rating1_"+x._1.toString, x._2.toString)
       jedisIns.close()
     })
     counterMovieIdNeg.foreach( x=> {
       val jedisIns = new Jedis("nyf-2019211193-0001",6379,100000)
-      jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+      jedisIns.auth("redis_passwd")
       jedisIns.set("batch2feature_movieId_rating0_"+x._1.toString, x._2.toString)
       jedisIns.close()
     })
     counterUserId2MovieId.foreach(x=> {
       val jedisIns = new Jedis("nyf-2019211193-0001",6379,100000)
-      jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+      jedisIns.auth("redis_passwd")
       jedisIns.set(s"batch2feature_userId_to_genresId_${x._1.toString}_${x._2._1}", x._2._2.toString)
       jedisIns.close()
     })

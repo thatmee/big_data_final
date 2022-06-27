@@ -61,7 +61,7 @@ object kafkaStreaming {
       rdd.foreachPartition { part => {
         //redis connection
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         //hbase connection
         val config = HBaseConfiguration.create
         config.set("hbase.zookeeper.property.clientPort", "2181")
@@ -102,7 +102,7 @@ object kafkaStreaming {
         line.sortBy(x => x._2, ascending = false).take(10).foreach(
           x => {
             val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-            jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+            jedisIns.auth("redis_passwd")
             while (jedisIns.llen("popular_movies_all")>=30) jedisIns.lpop("popular_movies_all")
             jedisIns.rpush("popular_movies_all",x._1.toString)
             jedisIns.close()
@@ -114,7 +114,7 @@ object kafkaStreaming {
     stream.flatMap(x=> {
       var seqList: Seq[(Int, (Int, Int))] = Seq()
       val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-      jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+      jedisIns.auth("redis_passwd")
       val genresList = jedisIns.lrange(s"movie2genres_movieId_${x._3}",0,-1)
       val it = genresList.iterator()
       while (it.hasNext) {
@@ -148,7 +148,7 @@ object kafkaStreaming {
         rdd => rdd.foreach{
         x => {
           val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-          jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+          jedisIns.auth("redis_passwd")
           jedisIns.del(s"popular_movies_genreId_${x._1}")
           for (i <- 0 until x._2._1) {
             jedisIns.rpush(s"popular_movies_genreId_${x._1}", x._2._2(i)._1.toString)
@@ -179,7 +179,7 @@ object kafkaStreaming {
         var sum = 0
         val one_hot: Array[Int] = new Array[Int](19)
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         for (record<-x) {
           sum=sum+1
           val genres_list = jedisIns.lrange("movie2genres_movieId_" + record.toString,0,-1)
@@ -199,7 +199,7 @@ object kafkaStreaming {
     counterUserIdPos.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set("streaming2feature_userId_rating1_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
@@ -207,7 +207,7 @@ object kafkaStreaming {
     counterUserIdNeg.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set("streaming2feature_userId_rating0_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
@@ -215,7 +215,7 @@ object kafkaStreaming {
     counterMovieIdPos.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set("streaming2feature_movieId_rating1_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
@@ -223,7 +223,7 @@ object kafkaStreaming {
     counterMovieIdNeg.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set("streaming2feature_movieId_rating0_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
@@ -231,7 +231,7 @@ object kafkaStreaming {
     counterUserId2MovieId.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set(s"streaming2feature_userId_to_genresId_${x._1.toString}_${x._2._1}", x._2._2.toString)
         jedisIns.close()
       }}

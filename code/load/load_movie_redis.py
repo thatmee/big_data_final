@@ -12,7 +12,7 @@ import random
 import json
 
 def redis_connect(host="bd", port=6379):    
-    pool = redis.ConnectionPool(host=host, port=port, decode_responses=True, password='1Cuk1Be4O^4aXx3LL33=')
+    pool = redis.ConnectionPool(host=host, port=port, decode_responses=True, password='redis_passwd')
     return pool
 
 def getArgs():

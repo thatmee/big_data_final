@@ -67,7 +67,7 @@ object kafkaToSpark {
         var sum = 0
         val one_hot: Array[Int] = new Array[Int](19)
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         for (record<-x) {
           sum=sum+1
           val genres_list = jedisIns.lrange("movie2genres_movieId_" + record.toString,0,-1)
@@ -87,7 +87,7 @@ object kafkaToSpark {
     counterUserIdPos.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set(task + "2feature_userId_rating1_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
@@ -95,7 +95,7 @@ object kafkaToSpark {
     counterUserIdNeg.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set(task + "2feature_userId_rating0_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
@@ -103,7 +103,7 @@ object kafkaToSpark {
     counterMovieIdPos.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set(task + "2feature_movieId_rating1_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
@@ -111,7 +111,7 @@ object kafkaToSpark {
     counterMovieIdNeg.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set(task + "2feature_movieId_rating0_" + x._1.toString, x._2.toString)
         jedisIns.close()
       }}
@@ -119,7 +119,7 @@ object kafkaToSpark {
     counterUserId2MovieId.foreachRDD(
       rdd => rdd.foreach { x => {
         val jedisIns = new Jedis(redis_host,redis_port,redis_timeout)
-        jedisIns.auth("1Cuk1Be4O^4aXx3LL33=")
+        jedisIns.auth("redis_passwd")
         jedisIns.set(task + s"2feature_userId_to_genresId_${x._1.toString}_${x._2._1}", x._2._2.toString)
         jedisIns.close()
       }}
